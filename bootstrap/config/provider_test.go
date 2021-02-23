@@ -20,8 +20,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/edgexfoundry/go-mod-bootstrap/bootstrap/environment"
-	"github.com/edgexfoundry/go-mod-bootstrap/bootstrap/logging"
+	"github.com/edgexfoundry/go-mod-bootstrap/v2/bootstrap/environment"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients/logger"
 )
 
 const (
@@ -36,10 +36,10 @@ const (
 )
 
 func TestNewConfigProviderInfoUrl(t *testing.T) {
-	lc := logging.FactoryToStdout("unit-test")
+	lc := logger.NewMockClient()
 
-	envVars := environment.NewVariables()
-	target, err := NewProviderInfo(lc, envVars, goodUrlValue)
+	envVars := environment.NewVariables(lc)
+	target, err := NewProviderInfo(envVars, goodUrlValue)
 	require.NoError(t, err)
 
 	actual := target.ServiceConfig()
@@ -51,13 +51,13 @@ func TestNewConfigProviderInfoUrl(t *testing.T) {
 }
 
 func TestNewConfigProviderInfoEnv(t *testing.T) {
-	lc := logging.FactoryToStdout("unit-test")
+	lc := logger.NewMockClient()
 
 	err := os.Setenv(envKeyConfigUrl, goodUrlValue)
 	require.NoError(t, err)
 
-	envVars := environment.NewVariables()
-	target, err := NewProviderInfo(lc, envVars, goodUrlValue)
+	envVars := environment.NewVariables(lc)
+	target, err := NewProviderInfo(envVars, goodUrlValue)
 	require.NoError(t, err)
 
 	actual := target.ServiceConfig()
@@ -69,21 +69,21 @@ func TestNewConfigProviderInfoEnv(t *testing.T) {
 }
 
 func TestNewConfigProviderInfoBadUrl(t *testing.T) {
-	lc := logging.FactoryToStdout("unit-test")
+	lc := logger.NewMockClient()
 
-	envVars := environment.NewVariables()
-	_, err := NewProviderInfo(lc, envVars, badUrlValue)
+	envVars := environment.NewVariables(lc)
+	_, err := NewProviderInfo(envVars, badUrlValue)
 	assert.Error(t, err)
 }
 
 func TestNewConfigProviderInfoBadEnvUrl(t *testing.T) {
-	lc := logging.FactoryToStdout("unit-test")
+	lc := logger.NewMockClient()
 
 	// This should override the goodUrlValue below
 	err := os.Setenv(envKeyConfigUrl, badUrlValue)
 	require.NoError(t, err)
 
-	envVars := environment.NewVariables()
-	_, err = NewProviderInfo(lc, envVars, goodUrlValue)
+	envVars := environment.NewVariables(lc)
+	_, err = NewProviderInfo(envVars, goodUrlValue)
 	assert.Error(t, err)
 }

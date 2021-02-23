@@ -19,17 +19,17 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/edgexfoundry/go-mod-bootstrap/bootstrap/container"
-	"github.com/edgexfoundry/go-mod-bootstrap/bootstrap/interfaces"
-	"github.com/edgexfoundry/go-mod-bootstrap/bootstrap/secret"
-	"github.com/edgexfoundry/go-mod-bootstrap/bootstrap/startup"
-	"github.com/edgexfoundry/go-mod-bootstrap/config"
-	"github.com/edgexfoundry/go-mod-bootstrap/di"
-	"github.com/edgexfoundry/go-mod-secrets/pkg/types"
-	"github.com/edgexfoundry/go-mod-secrets/secrets"
+	"github.com/edgexfoundry/go-mod-bootstrap/v2/bootstrap/container"
+	"github.com/edgexfoundry/go-mod-bootstrap/v2/bootstrap/interfaces"
+	"github.com/edgexfoundry/go-mod-bootstrap/v2/bootstrap/secret"
+	"github.com/edgexfoundry/go-mod-bootstrap/v2/bootstrap/startup"
+	"github.com/edgexfoundry/go-mod-bootstrap/v2/config"
+	"github.com/edgexfoundry/go-mod-bootstrap/v2/di"
+	"github.com/edgexfoundry/go-mod-secrets/v2/pkg/types"
+	"github.com/edgexfoundry/go-mod-secrets/v2/secrets"
 
-	"github.com/edgexfoundry/go-mod-secrets/pkg/token/authtokenloader"
-	"github.com/edgexfoundry/go-mod-secrets/pkg/token/fileioperformer"
+	"github.com/edgexfoundry/go-mod-secrets/v2/pkg/token/authtokenloader"
+	"github.com/edgexfoundry/go-mod-secrets/v2/pkg/token/fileioperformer"
 )
 
 // SecureProviderBootstrapHandler full initializes the Secret Provider.
@@ -68,7 +68,7 @@ func SecureProviderBootstrapHandler(
 				var secretClient secrets.SecretClient
 
 				lc.Info("Attempting to create secret client")
-				secretClient, err = secrets.NewClient(ctx, secretConfig, lc, secureProvider.DefaultTokenExpiredCallback)
+				secretClient, err = secrets.NewSecretsClient(ctx, secretConfig, lc, secureProvider.DefaultTokenExpiredCallback)
 				if err == nil {
 					secureProvider.SetClient(secretClient)
 					provider = secureProvider
@@ -103,6 +103,7 @@ func SecureProviderBootstrapHandler(
 // If a token file is present it will override the Authentication.AuthToken value.
 func getSecretConfig(secretStoreInfo config.SecretStoreInfo, tokenLoader authtokenloader.AuthTokenLoader) (types.SecretConfig, error) {
 	secretConfig := types.SecretConfig{
+		Type:                    secretStoreInfo.Type, // Type of SecretStore implementation, i.e. Vault
 		Host:                    secretStoreInfo.Host,
 		Port:                    secretStoreInfo.Port,
 		Path:                    secretStoreInfo.Path,

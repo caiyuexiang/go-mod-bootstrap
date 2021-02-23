@@ -18,7 +18,7 @@ package startup
 import (
 	"time"
 
-	"github.com/edgexfoundry/go-mod-bootstrap/bootstrap/environment"
+	"github.com/edgexfoundry/go-mod-bootstrap/v2/bootstrap/environment"
 )
 
 // Timer contains references to dependencies required by the startup timer implementation.
@@ -39,9 +39,28 @@ func NewStartUpTimer(serviceKey string) Timer {
 	}
 }
 
+// NewTimer is a factory method that returns a Timer initialized with passed in duration and interval.
+func NewTimer(duration int, interval int) Timer {
+	return Timer{
+		startTime: time.Now(),
+		duration:  time.Second * time.Duration(duration),
+		interval:  time.Second * time.Duration(interval),
+	}
+}
+
 // SinceAsString returns the time since the timer was created as a string.
 func (t Timer) SinceAsString() string {
 	return time.Since(t.startTime).String()
+}
+
+// RemainingAsString returns the time remaining on the timer as a string.
+func (t Timer) RemainingAsString() string {
+
+	remaining := t.duration - time.Since(t.startTime)
+	if remaining < 0 {
+		remaining = 0
+	}
+	return remaining.String()
 }
 
 // HasNotElapsed returns whether or not the duration specified during construction has elapsed.

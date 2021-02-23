@@ -17,23 +17,24 @@ package bootstrap
 
 import (
 	"context"
-	"github.com/edgexfoundry/go-mod-bootstrap/bootstrap/logging"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 
-	"github.com/edgexfoundry/go-mod-core-contracts/clients/logger"
-	"github.com/edgexfoundry/go-mod-registry/registry"
+	"github.com/edgexfoundry/go-mod-bootstrap/v2/bootstrap/config"
+	"github.com/edgexfoundry/go-mod-bootstrap/v2/bootstrap/container"
+	"github.com/edgexfoundry/go-mod-bootstrap/v2/bootstrap/environment"
+	"github.com/edgexfoundry/go-mod-bootstrap/v2/bootstrap/flags"
+	"github.com/edgexfoundry/go-mod-bootstrap/v2/bootstrap/interfaces"
+	"github.com/edgexfoundry/go-mod-bootstrap/v2/bootstrap/registration"
+	"github.com/edgexfoundry/go-mod-bootstrap/v2/bootstrap/startup"
+	"github.com/edgexfoundry/go-mod-bootstrap/v2/di"
 
-	"github.com/edgexfoundry/go-mod-bootstrap/bootstrap/config"
-	"github.com/edgexfoundry/go-mod-bootstrap/bootstrap/container"
-	"github.com/edgexfoundry/go-mod-bootstrap/bootstrap/environment"
-	"github.com/edgexfoundry/go-mod-bootstrap/bootstrap/flags"
-	"github.com/edgexfoundry/go-mod-bootstrap/bootstrap/interfaces"
-	"github.com/edgexfoundry/go-mod-bootstrap/bootstrap/registration"
-	"github.com/edgexfoundry/go-mod-bootstrap/bootstrap/startup"
-	"github.com/edgexfoundry/go-mod-bootstrap/di"
+	"github.com/edgexfoundry/go-mod-registry/v2/registry"
+
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients/logger"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/models"
 )
 
 // Deferred defines the signature of a function returned by RunAndReturnWaitGroup that should be executed via defer.
@@ -94,12 +95,12 @@ func RunAndReturnWaitGroup(
 	// Check if service provided an initial Logging Client to use. If not create one.
 	lc := container.LoggingClientFrom(dic.Get)
 	if lc == nil {
-		lc = logging.FactoryToStdout(serviceKey)
+		lc = logger.NewClient(serviceKey, models.InfoLog)
 	}
 
 	translateInterruptToCancel(ctx, &wg, cancel)
 
-	envVars := environment.NewVariables()
+	envVars := environment.NewVariables(lc)
 
 	configProcessor := config.NewProcessor(lc, commonFlags, envVars, startupTimer, ctx, &wg, configUpdated, dic)
 	if err := configProcessor.Process(serviceKey, configStem, serviceConfig); err != nil {
@@ -111,16 +112,12 @@ func RunAndReturnWaitGroup(
 
 	var registryClient registry.Client
 
-	// TODO: Remove `|| config.UseRegistry()` for release V2.0.0
-	if commonFlags.UseRegistry() || envVars.UseRegistry() {
-		// For backwards compatibility with Fuji Device Service, registry is a string that can contain a provider URL.
-		// TODO: Remove registryUrl in call below for release V2.0.0
+	envUseRegistry, wasOverridden := envVars.UseRegistry()
+	if envUseRegistry || (commonFlags.UseRegistry() && !wasOverridden) {
 		registryClient, err = registration.RegisterWithRegistry(
 			ctx,
 			startupTimer,
 			serviceConfig,
-			commonFlags.RegistryUrl(),
-			envVars,
 			lc,
 			serviceKey)
 		if err != nil {
@@ -145,6 +142,9 @@ func RunAndReturnWaitGroup(
 		},
 		container.RegistryClientInterfaceName: func(get di.Get) interface{} {
 			return registryClient
+		},
+		container.CancelFuncName: func(get di.Get) interface{} {
+			return cancel
 		},
 	})
 

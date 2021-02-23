@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2019 Dell Inc.
+ * Copyright 2020 Intel Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,12 +12,23 @@
  * the License.
  *******************************************************************************/
 
-package interfaces
+package container
 
-import "github.com/edgexfoundry/go-mod-bootstrap/v2/config"
+import (
+	"context"
 
-// CredentialsProvider interface provides an abstraction for obtaining credentials.
-type CredentialsProvider interface {
-	// GetDatabaseCredentials retrieves database credentials.
-	GetDatabaseCredentials(database config.Database) (config.Credentials, error)
+	"github.com/edgexfoundry/go-mod-bootstrap/v2/di"
+)
+
+// CancelFuncName contains the name of the context.CancelFunc in the DIC.
+var CancelFuncName = di.TypeInstanceToName((*context.CancelFunc)(nil))
+
+// CancelFuncFrom helper function queries the DIC and returns the context.CancelFunc.
+func CancelFuncFrom(get di.Get) context.CancelFunc {
+	cancelFunc, ok := get(CancelFuncName).(context.CancelFunc)
+	if !ok {
+		return nil
+	}
+
+	return cancelFunc
 }

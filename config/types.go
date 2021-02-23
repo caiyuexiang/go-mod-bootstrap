@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/edgexfoundry/go-mod-core-contracts/clients"
-	"github.com/edgexfoundry/go-mod-secrets/pkg/types"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients"
+	"github.com/edgexfoundry/go-mod-secrets/v2/pkg/types"
 )
 
 // ServiceInfo contains configuration settings necessary for the basic operation of any EdgeX service.
@@ -77,12 +77,6 @@ type RegistryInfo struct {
 	Type string
 }
 
-// LoggingInfo provides basic parameters related to where logs should be written.
-type LoggingInfo struct {
-	EnableRemote bool
-	File         string
-}
-
 // ClientInfo provides the host and port of another service in the eco-system.
 type ClientInfo struct {
 	// Host is the hostname or IP address of a service.
@@ -100,6 +94,7 @@ func (c ClientInfo) Url() string {
 
 // SecretStoreInfo encapsulates configuration properties used to create a SecretClient.
 type SecretStoreInfo struct {
+	Type                    string
 	Host                    string
 	Port                    int
 	Path                    string
@@ -150,6 +145,5 @@ type BootstrapConfiguration struct {
 	Service     ServiceInfo
 	Config      ConfigProviderInfo
 	Registry    RegistryInfo
-	Logging     LoggingInfo
 	SecretStore SecretStoreInfo
 }
